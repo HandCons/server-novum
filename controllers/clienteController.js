@@ -5,7 +5,8 @@ require('dotenv').config();
 async function sincronizarClientes(req, res) {
   try {
     const clientes = await buscarClientesIXC();
-    const simularBanco = process.env.SIMULACAO_BANCO === 'true'; // Variável de ambiente
+    const simularBanco = process.env.SIMULACAO_BANCO === 'true';
+    const companyId = simularBanco ? 310 : 321; // Variável de ambiente
 
     if (simularBanco) {
       // Simulação
@@ -15,7 +16,8 @@ async function sincronizarClientes(req, res) {
           id: cliente.id,
           razao: cliente.razao,
           cnpj_cpf: cliente.cnpj_cpf,
-          ie_identidade: cliente.ie_identidade
+          ie_identidade: cliente.ie_identidade,
+          company_id: companyId
         });
       }
 
@@ -27,13 +29,14 @@ async function sincronizarClientes(req, res) {
       // Inserção real no banco de dados
       for (const cliente of clientes) {
         await db.query(
-          `INSERT INTO employee (id, name, cpf, rg)
-           VALUES (?, ?, ?, ?)
+          `INSERT INTO employee (id, name, cpf, rg, company_id)
+           VALUES (?, ?, ?, ?, ?)
            ON DUPLICATE KEY UPDATE
-           name = VALUES(razao),
-           cpf = VALUES(cnpj_cpf),
-           rg = VALUES(ie_identidade)`,
-          [cliente.id, cliente.razao, cliente.cnpj_cpf, cliente.ie_identidade]
+             name = VALUES(name),
+             cpf = VALUES(cpf),
+             rg = VALUES(rg),
+             company_id = VALUES(company_id)`,
+          [cliente.id, cliente.razao, cliente.cnpj_cpf, cliente.ie_identidade, companyId]
         );
       }
 
